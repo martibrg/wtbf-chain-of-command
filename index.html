@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galleria a scorrimento</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background: #000;
+    overflow: hidden; /* nascondiamo la scrollbar nativa, scrolliamo il container interno */
+  }
+
+  #gallery {
+    height: 100vh;
+    width: 100vw;
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+  }
+  #gallery::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+  .photo {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .photo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div id="gallery">
+  <!-- Aggiungi qui le tue foto: una <div class="photo"> per ciascuna -->
+  <div class="photo"><img src="images/foto1.jpg" alt=""></div>
+  <div class="photo"><img src="images/foto2.jpg" alt=""></div>
+  <div class="photo"><img src="images/foto3.jpg" alt=""></div>
+  <div class="photo"><img src="images/foto4.jpg" alt=""></div>
+</div>
+
+<script>
+(function () {
+  const gallery = document.getElementById('gallery');
+
+  const SPEED = 0.4;          // px per frame di scroll automatico (regola a piacere)
+  const RESUME_DELAY = 5000;  // ms di inattività prima di ripartire
+
+  let direction = 1;          // 1 = giù, -1 = su
+  let userActive = false;     // true mentre l'utente sta interagendo
+  let resumeTimer = null;
+  let rafId = null;
+
+  let lastScrollTop = gallery.scrollTop;
+
+  function maxScroll() {
+    return gallery.scrollHeight - gallery.clientHeight;
+  }
+
+  // --- loop di scroll automatico ---
+  function autoScrollStep() {
+    if (!userActive) {
+      const max = maxScroll();
+      let next = gallery.scrollTop + direction * SPEED;
+
+      if (next >= max) {
+        next = max;
+        direction = -1; // rimbalza verso l'alto
+      } else if (next <= 0) {
+        next = 0;
+        direction = 1; // rimbalza verso il basso
+      }
+
+      gallery.scrollTop = next;
+    }
+    rafId = requestAnimationFrame(autoScrollStep);
+  }
+
+  // --- gestione input utente ---
+  function onUserInputStart() {
+    userActive = true;
+    if (resumeTimer) {
+      clearTimeout(resumeTimer);
+      resumeTimer = null;
+    }
+  }
+
+  function onUserInputEnd() {
+    // aggiorna la direzione in base all'ultimo movimento fatto dall'utente
+    const current = gallery.scrollTop;
+    if (current > lastScrollTop) direction = 1;
+    else if (current < lastScrollTop) direction = -1;
+    lastScrollTop = current;
+
+    if (resumeTimer) clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
+      userActive = false;
+      resumeTimer = null;
+    }, RESUME_DELAY);
+  }
+
+  // La rotellina del mouse / trackpad
+  gallery.addEventListener('wheel', () => {
+    onUserInputStart();
+    onUserInputEnd();
+  }, { passive: true });
+
+  // Touch (mobile)
+  gallery.addEventListener('touchstart', onUserInputStart, { passive: true });
+  gallery.addEventListener('touchmove', () => {
+    onUserInputEnd();
+  }, { passive: true });
+  gallery.addEventListener('touchend', onUserInputEnd);
+
+  // Frecce/tastiera/spazio/PageUp/PageDown
+  gallery.setAttribute('tabindex', '0'); // rende il div focusabile per i tasti
+  window.addEventListener('keydown', (e) => {
+    const keys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', ' ', 'Home', 'End'];
+    if (keys.includes(e.key)) {
+      onUserInputStart();
+      // aspettiamo un attimo che il browser applichi lo scroll nativo prima di leggere la direzione
+      setTimeout(onUserInputEnd, 0);
+    }
+  });
+
+  // Aggiorna lastScrollTop anche durante lo scroll manuale continuo (drag scrollbar ecc.)
+  gallery.addEventListener('scroll', () => {
+    if (userActive) {
+      const current = gallery.scrollTop;
+      if (current !== lastScrollTop) {
+        direction = current > lastScrollTop ? 1 : -1;
+        lastScrollTop = current;
+      }
+    }
+  }, { passive: true });
+
+  rafId = requestAnimationFrame(autoScrollStep);
+})();
+</script>
+
+</body>
+</html>
