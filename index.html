@@ -57,6 +57,160 @@
 (function () {
   const gallery = document.getElementById('gallery');
 
+  const SPEED = 0.25;         // px per frame di scroll automatico (anche valori molto piccoli ora funzionano)
+  const RESUME_DELAY = 5000;  // ms di inattività prima di ripartire
+
+  let direction = 1;          // 1 = giù, -1 = su
+  let userActive = false;     // true mentre l'utente sta interagendo
+  let resumeTimer = null;
+  let rafId = null;
+
+  // posizione "vera" con i decimali: scrollTop è sempre un intero,
+  // quindi se ci basassimo su quello perderemmo gli incrementi < 1px
+  let position = gallery.scrollTop;
+  let lastScrollTop = gallery.scrollTop;
+
+  function maxScroll() {
+    return gallery.scrollHeight - gallery.clientHeight;
+  }
+
+  // --- loop di scroll automatico ---
+  function autoScrollStep() {
+    if (!userActive) {
+      const max = maxScroll();
+      position += direction * SPEED;
+
+      if (position >= max) {
+        position = max;
+        direction = -1; // rimbalza verso l'alto
+      } else if (position <= 0) {
+        position = 0;
+        direction = 1; // rimbalza verso il basso
+      }
+
+      gallery.scrollTop = position;
+    } else {
+      // mentre l'utente controlla manualmente, teniamo la posizione allineata
+      position = gallery.scrollTop;
+    }
+    rafId = requestAnimationFrame(autoScrollStep);
+  }
+
+  // --- gestione input utente ---
+  function onUserInputStart() {
+    userActive = true;
+    if (resumeTimer) {
+      clearTimeout(resumeTimer);
+      resumeTimer = null;
+    }
+  }
+
+  function onUserInputEnd() {
+    // la direzione NON viene modificata dall'input dell'utente:
+    // resta quella che l'auto-scroll stava seguendo prima dell'interazione
+    if (resumeTimer) clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
+      userActive = false;
+      resumeTimer = null;
+    }, RESUME_DELAY);
+  }
+
+  // La rotellina del mouse / trackpad
+  gallery.addEventListener('wheel', () => {
+    onUserInputStart();
+    onUserInputEnd();
+  }, { passive: true });
+
+  // Touch (mobile)
+  gallery.addEventListener('touchstart', onUserInputStart, { passive: true });
+  gallery.addEventListener('touchmove', () => {
+    onUserInputEnd();
+  }, { passive: true });
+  gallery.addEventListener('touchend', onUserInputEnd);
+
+  // Frecce/tastiera/spazio/PageUp/PageDown
+  gallery.setAttribute('tabindex', '0'); // rende il div focusabile per i tasti
+  window.addEventListener('keydown', (e) => {
+    const keys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', ' ', 'Home', 'End'];
+    if (keys.includes(e.key)) {
+      onUserInputStart();
+      // aspettiamo un attimo che il browser applichi lo scroll nativo prima di leggere la direzione
+      setTimeout(onUserInputEnd, 0);
+    }
+  });
+
+  // Aggiorna la posizione durante lo scroll manuale (drag scrollbar ecc.),
+  // ma senza toccare la direzione dell'auto-scroll
+  gallery.addEventListener('scroll', () => {
+    if (userActive) {
+      lastScrollTop = gallery.scrollTop;
+    }
+  }, { passive: true });
+
+  rafId = requestAnimationFrame(autoScrollStep);
+})();
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Galleria a scorrimento</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background: #fff;
+    overflow: hidden; /* nascondiamo la scrollbar nativa, scrolliamo il container interno */
+  }
+
+  #gallery {
+    height: 100vh;
+    width: 100vw;
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+  }
+  #gallery::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+  #gallery img {
+    display: block;
+    width: 100%;
+    height: auto;   /* si adatta solo in larghezza, l'altezza segue le proporzioni originali */
+  }
+</style>
+</head>
+<body>
+
+<div id="gallery">
+  <!-- Aggiungi qui le tue foto, una dopo l'altra, senza wrapper -->
+  <img src="images/img_1.png" alt="">
+  <img src="images/img_2.png" alt="">
+  <img src="images/img_3.png" alt="">
+  <img src="images/img_4.png" alt="">
+  <img src="images/img_5.png" alt="">
+  <img src="images/img_6.png" alt="">
+  <img src="images/img_7.png" alt="">
+  <img src="images/img_8.png" alt="">
+  <img src="images/img_9.png" alt="">
+  <img src="images/img_10.png" alt="">
+  <img src="images/img_11.png" alt="">
+  <img src="images/img_12.png" alt="">
+  <img src="images/img_13.png" alt="">
+  <img src="images/img_14.png" alt="">
+  <img src="images/img_15.png" alt="">
+  <img src="images/img_16.png" alt="">
+</div>
+
+<script>
+(function () {
+  const gallery = document.getElementById('gallery');
+
   const SPEED = 0.3;         // px per frame di scroll automatico (anche valori molto piccoli ora funzionano)
   const RESUME_DELAY = 5000;  // ms di inattività prima di ripartire
 
