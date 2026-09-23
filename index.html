@@ -2,7 +2,10 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Galleria a scorrimento</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +57,7 @@
 (function () {
   const gallery = document.getElementById('gallery');
 
-  const SPEED = 0.2;         // px per frame di scroll automatico (anche valori molto piccoli ora funzionano)
+  const SPEED = 0.05;         // px per frame di scroll automatico (anche valori molto piccoli ora funzionano)
   const RESUME_DELAY = 5000;  // ms di inattività prima di ripartire
 
   let direction = 1;          // 1 = giù, -1 = su
