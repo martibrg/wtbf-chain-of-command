@@ -54,7 +54,7 @@
 (function () {
   const gallery = document.getElementById('gallery');
 
-  const SPEED = 0.3;          // px per frame di scroll automatico (regola a piacere)
+  const SPEED = 0.05;         // px per frame di scroll automatico (anche valori molto piccoli ora funzionano)
   const RESUME_DELAY = 5000;  // ms di inattività prima di ripartire
 
   let direction = 1;          // 1 = giù, -1 = su
@@ -62,6 +62,9 @@
   let resumeTimer = null;
   let rafId = null;
 
+  // posizione "vera" con i decimali: scrollTop è sempre un intero,
+  // quindi se ci basassimo su quello perderemmo gli incrementi < 1px
+  let position = gallery.scrollTop;
   let lastScrollTop = gallery.scrollTop;
 
   function maxScroll() {
@@ -72,17 +75,20 @@
   function autoScrollStep() {
     if (!userActive) {
       const max = maxScroll();
-      let next = gallery.scrollTop + direction * SPEED;
+      position += direction * SPEED;
 
-      if (next >= max) {
-        next = max;
+      if (position >= max) {
+        position = max;
         direction = -1; // rimbalza verso l'alto
-      } else if (next <= 0) {
-        next = 0;
+      } else if (position <= 0) {
+        position = 0;
         direction = 1; // rimbalza verso il basso
       }
 
-      gallery.scrollTop = next;
+      gallery.scrollTop = position;
+    } else {
+      // mentre l'utente controlla manualmente, teniamo la posizione allineata
+      position = gallery.scrollTop;
     }
     rafId = requestAnimationFrame(autoScrollStep);
   }
